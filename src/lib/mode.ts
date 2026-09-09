@@ -13,4 +13,4 @@ export function isReadOnly(): boolean {
 }
 
 export const READ_ONLY_BANNER =
-  'Drafts work locally — this deploy is read-only';
+  'Drafts are disabled on this deploy';
