@@ -8,6 +8,7 @@ type ApiResponse = {
   total: number;
   limit: number;
   offset: number;
+  readOnly?: boolean;
 };
 
 const AGENCIES = ['all', 'NARA', 'NDC', 'FBI', 'CIA'] as const;
@@ -23,6 +24,7 @@ export function Feed() {
   const [offset, setOffset] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readOnly, setReadOnly] = useState(false);
   const limit = 12;
 
   const load = useCallback(
@@ -42,6 +44,7 @@ export function Feed() {
         if (!res.ok) throw new Error(data.error || 'Failed to load');
         setTotal(data.total);
         setOffset(nextOffset);
+        setReadOnly(Boolean(data.readOnly));
         setRows((prev) => (replace ? data.rows : [...prev, ...data.rows]));
       } catch (e) {
         setError((e as Error).message);
@@ -60,14 +63,22 @@ export function Feed() {
 
   return (
     <div className="space-y-6">
+      {readOnly && (
+        <div className="rounded-md border border-stamp-amber/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
+          Drafts work locally — this deploy is read-only
+        </div>
+      )}
+
       <section className="rounded-xl border border-ink-800 bg-ink-950/60 p-4">
         <h1 className="font-display text-2xl font-bold text-ink-50">
           Continuous release feed
         </h1>
         <p className="mt-1 max-w-2xl text-sm text-ink-300">
           Newest public / declassified records first. Search and filter by
-          agency or digitization status. Draft for X creates an approval-only
-          queue entry — nothing is posted automatically.
+          agency or digitization status.
+          {readOnly
+            ? ' This deploy serves bundled JSON (no SQLite).'
+            : ' Draft for X creates an approval-only queue entry — nothing is posted automatically.'}
         </p>
         <form
           className="mt-4 grid gap-3 md:grid-cols-4"
@@ -124,14 +135,20 @@ export function Feed() {
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {rows.map((r) => (
-          <RecordCard key={r.id} record={r} />
+          <RecordCard key={r.id} record={r} draftsEnabled={!readOnly} />
         ))}
       </section>
 
       {!loading && rows.length === 0 && (
         <p className="text-center text-ink-400">
           No records yet. Run <code className="text-ink-200">npm run seed</code>{' '}
-          then refresh.
+          then refresh
+          {readOnly ? (
+            <>
+              , or commit <code className="text-ink-200">data/records.json</code>
+            </>
+          ) : null}
+          .
         </p>
       )}
 
