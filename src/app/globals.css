@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0f1419;
+  --panel: #1a222b;
+  --line: #324251;
+  --text: #e8ecf0;
+  --muted: #a8b8c6;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse at top, rgba(90, 118, 144, 0.12), transparent 50%),
+    linear-gradient(180deg, #0f1419 0%, #12181f 100%);
+}
+
+.stamp {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
