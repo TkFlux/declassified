@@ -2,10 +2,10 @@
 .gitignore
 MANIFEST.txt
 README.md
-data/crawl-state.json
 data/records.json
+data/records.part1.json
+data/records.part2.json
 data/seed.json
-next-env.d.ts
 next.config.mjs
 package.json
 postcss.config.mjs

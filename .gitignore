@@ -18,6 +18,7 @@ data/*.db
 data/*.jsonl
 !data/seed.json
 !data/records.json
+!data/records.*.json
 
 # env
 .env
