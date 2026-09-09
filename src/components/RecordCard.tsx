@@ -33,9 +33,11 @@ function formatDate(iso: string | null): string {
 export function RecordCard({
   record,
   onDrafted,
+  draftsEnabled = true,
 }: {
   record: RecordCardData;
   onDrafted?: () => void;
+  draftsEnabled?: boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -43,13 +45,14 @@ export function RecordCard({
   const official = record.download_url || record.source_url;
 
   async function draftForX() {
+    if (!draftsEnabled) return;
     setBusy(true);
     setMsg(null);
     try {
       const res = await fetch('/api/drafts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ recordId: record.id }),
+        body: JSON.stringify({ recordId: record.id }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
@@ -103,14 +106,23 @@ export function RecordCard({
           >
             {hasFile ? 'Official download' : 'Official source'}
           </a>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={draftForX}
-            className="rounded-md border border-ink-600 px-3 py-1.5 text-xs font-semibold text-ink-100 hover:border-ink-400 disabled:opacity-50"
-          >
-            {busy ? 'Drafting…' : 'Draft for X'}
-          </button>
+          {draftsEnabled ? (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={draftForX}
+              className="rounded-md border border-ink-600 px-3 py-1.5 text-xs font-semibold text-ink-100 hover:border-ink-400 disabled:opacity-50"
+            >
+              {busy ? 'Drafting…' : 'Draft for X'}
+            </button>
+          ) : (
+            <span
+              title="Drafts work locally — this deploy is read-only"
+              className="rounded-md border border-ink-800 px-3 py-1.5 text-xs text-ink-500"
+            >
+              Drafts disabled
+            </span>
+          )}
         </div>
         {msg && <p className="text-xs text-ink-400">{msg}</p>}
       </div>

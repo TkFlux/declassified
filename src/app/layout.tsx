@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Sans, IBM_Plex_Serif } from 'next/font/google';
 import Link from 'next/link';
+import { isReadOnly, READ_ONLY_BANNER } from '@/lib/mode';
 import './globals.css';
 
 const sans = IBM_Plex_Sans({
@@ -26,6 +27,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const readOnly = isReadOnly();
+
   return (
     <html lang="en" className={`${sans.variable} ${display.variable}`}>
       <body className="font-sans antialiased">
@@ -37,6 +40,7 @@ export default function RootLayout({
               </div>
               <div className="stamp text-ink-400 group-hover:text-ink-300">
                 U.S. public release feed
+                {readOnly ? ' · read-only' : ''}
               </div>
             </Link>
             <nav className="flex items-center gap-3 text-sm">
@@ -62,12 +66,20 @@ export default function RootLayout({
               </a>
             </nav>
           </div>
+          {readOnly && (
+            <div className="border-t border-stamp-amber/30 bg-amber-950/50 px-4 py-2 text-center text-xs text-amber-100 sm:text-sm">
+              {READ_ONLY_BANNER}
+            </div>
+          )}
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-xs text-ink-400">
           Metadata and links only — no bulk PDF downloads. Drafts for X require
           human approval; nothing is auto-posted. State/NSA sources disabled in
           MVP.
+          {readOnly
+            ? ' Vercel deploy serves bundled JSON (no better-sqlite3).'
+            : ''}
         </footer>
       </body>
     </html>
