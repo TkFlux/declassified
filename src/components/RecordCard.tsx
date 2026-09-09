@@ -91,12 +91,6 @@ export function RecordCard({
         </h2>
         <p className="line-clamp-2 text-sm text-ink-300">{record.summary}</p>
 
-        {!hasFile && (
-          <div className="rounded-md border border-dashed border-stamp-amber/50 bg-amber-950/30 px-2 py-1.5 text-xs text-amber-200">
-            Declassified / described but not digitized — no file URL
-          </div>
-        )}
-
         <div className="mt-auto flex flex-wrap items-center gap-2 pt-2">
           <a
             href={official}
@@ -117,7 +111,7 @@ export function RecordCard({
             </button>
           ) : (
             <span
-              title="Drafts work locally — this deploy is read-only"
+              title="Drafts are disabled on this deploy"
               className="rounded-md border border-ink-800 px-3 py-1.5 text-xs text-ink-500"
             >
               Drafts disabled

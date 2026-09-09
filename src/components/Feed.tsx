@@ -63,12 +63,6 @@ export function Feed() {
 
   return (
     <div className="space-y-6">
-      {readOnly && (
-        <div className="rounded-md border border-stamp-amber/50 bg-amber-950/40 px-3 py-2 text-sm text-amber-100">
-          Drafts work locally — this deploy is read-only
-        </div>
-      )}
-
       <section className="rounded-xl border border-ink-800 bg-ink-950/60 p-4">
         <h1 className="font-display text-2xl font-bold text-ink-50">
           Continuous release feed
