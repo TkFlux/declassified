@@ -2,19 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   createDraft,
   getRecordById,
+  isReadOnly,
   listDrafts,
+  READ_ONLY_BANNER,
   updateDraftStatus,
-} from '@/lib/db';
+} from '@/lib/store';
 import { buildTweetDraft } from '@/lib/draft-text';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+function readOnlyResponse() {
+  return NextResponse.json(
+    {
+      error: READ_ONLY_BANNER,
+      readOnly: true,
+      drafts: [],
+    },
+    { status: 403 }
+  );
+}
+
 export async function GET(req: NextRequest) {
   try {
+    if (isReadOnly()) {
+      return NextResponse.json({
+        drafts: [],
+        readOnly: true,
+        banner: READ_ONLY_BANNER,
+      });
+    }
     const status = req.nextUrl.searchParams.get('status') || 'pending';
     const drafts = listDrafts(status);
-    return NextResponse.json({ drafts });
+    return NextResponse.json({ drafts, readOnly: false });
   } catch (e) {
     return NextResponse.json(
       { error: (e as Error).message },
@@ -25,6 +45,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    if (isReadOnly()) return readOnlyResponse();
     const body = (await req.json()) as { recordId?: string; text?: string };
     if (!body.recordId) {
       return NextResponse.json({ error: 'recordId required' }, { status: 400 });
@@ -46,6 +67,7 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
+    if (isReadOnly()) return readOnlyResponse();
     const body = (await req.json()) as {
       id?: number;
       status?: 'pending' | 'approved' | 'rejected';

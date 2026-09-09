@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { queryRecords, getAgencies } from '@/lib/db';
+import { getAgencies, isReadOnly, queryRecords } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       limit,
       offset,
       agencies: getAgencies(),
+      readOnly: isReadOnly(),
     });
   } catch (e) {
     return NextResponse.json(
