@@ -10,19 +10,22 @@
     "crawl": "tsx scripts/crawl.ts",
     "search": "tsx scripts/search.ts",
     "export:jsonl": "tsx scripts/export-jsonl.ts",
+    "build:records": "tsx scripts/build-records.ts",
     "seed": "tsx scripts/seed.ts",
     "test": "tsx --test tests/*.test.ts",
-    "postinstall": "echo 'Ready. Run npm run seed if DB is empty.'"
+    "postinstall": "echo 'Ready. Run npm run seed if DB is empty. For Vercel, ensure data/records.json is committed.'"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "better-sqlite3": "^11.7.0",
     "next": "^14.2.21",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "robots-parser": "^3.0.1"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.7.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
