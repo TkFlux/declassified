@@ -55,16 +55,22 @@ function loadFromFile(filePath: string): RecordRow[] {
   return arr.map((r) => normalize(r as Partial<RecordRow> & { id: string }));
 }
 
-/** Merge records.json (preferred), else seed.json + export.jsonl */
+/** Merge all data/records*.json, else seed.json + export.jsonl */
 export function loadJsonRecords(force = false): RecordRow[] {
   if (_cache && !force) return _cache;
 
   const byId = new Map<string, RecordRow>();
 
-  const recordsJson = dataPath('records.json');
-  if (fs.existsSync(recordsJson)) {
-    for (const r of loadFromFile(recordsJson)) byId.set(r.id, r);
-  } else {
+  const dataDir = path.join(process.cwd(), 'data');
+  let loadedRecordsJson = false;
+  if (fs.existsSync(dataDir)) {
+    for (const name of fs.readdirSync(dataDir).sort()) {
+      if (!name.startsWith('records') || !name.endsWith('.json')) continue;
+      loadedRecordsJson = true;
+      for (const r of loadFromFile(path.join(dataDir, name))) byId.set(r.id, r);
+    }
+  }
+  if (!loadedRecordsJson) {
     for (const r of loadFromFile(dataPath('seed.json'))) byId.set(r.id, r);
     for (const r of loadFromFile(dataPath('export.jsonl'))) byId.set(r.id, r);
   }
