@@ -11,11 +11,12 @@ Repo: [TkFlux/declassified](https://github.com/TkFlux/declassified)
 - Cards: title, summary, agency badge, date, optional thumbnail, official link
 - Flag when **declassified but not digitized** (no file URL)
 - **Load more** pagination
-- **Draft for X** → short tweet text stored in SQLite for human approval (`/drafts`)
+- **Draft for X** → short tweet text stored in SQLite for human approval (`/drafts`) — **local only**
 - **Collector** scripts: polite crawl (delays + robots.txt), SQLite, JSONL export, CLI search
 - Metadata + URLs only — **does not bulk-download PDFs**
+- **Vercel read-only deploy**: feed from bundled `data/records*.json` (no `better-sqlite3` on serverless)
 
-## Quick start
+## Quick start (local, full features)
 
 ```bash
 # Node 20+
@@ -34,13 +35,40 @@ npm run crawl -- --source nara   # one source
 npm run crawl -- --resume        # skip sources already marked done in data/crawl-state.json
 npm run search -- --query "Cuba"
 npm run export:jsonl             # data/export.jsonl
+npm run build:records            # merge seed + export → data/records.json (for Vercel)
 ```
 
-Copy `.env.example` to `.env` if you want to override `DATABASE_PATH`.
+Copy `.env.example` to `.env` if you want to override `DATABASE_PATH` or force `READ_ONLY=1`.
+
+## Deploy on Vercel (read-only feed)
+
+Vercel serverless **cannot** use writable `better-sqlite3`. This app detects `process.env.VERCEL` (or `READ_ONLY=1`) and:
+
+1. Serves the feed from committed JSON (`data/records.json` plus any `data/records*.json` parts, falling back to `data/seed.json` + `data/export.jsonl` if present)
+2. Keeps search + filters working in memory
+3. **Disables Draft for X** with banner: *“Drafts work locally — this deploy is read-only”*
+
+`better-sqlite3` is an **optionalDependency** and is only loaded dynamically when not in read-only mode, so the Vercel build does not need the native module.
+
+### Steps
+
+1. Ensure record snapshots are committed (regenerate after crawls):
+
+   ```bash
+   npm run export:jsonl   # optional, from local SQLite
+   npm run build:records  # writes data/records.json
+   git add data/records.json && git commit -m "Update records for Vercel"
+   ```
+
+2. Import the GitHub repo in Vercel (framework: Next.js — `vercel.json` included).
+3. Deploy. No env vars required; `VERCEL=1` is set automatically.
+4. Optional: set `READ_ONLY=1` on any host to force the JSON path.
+
+Do **not** expect drafts, crawl, or SQLite writes on Vercel.
 
 ## Draft for X
 
-1. On any feed card, click **Draft for X**.
+1. On any feed card, click **Draft for X** (local / non-read-only only).
 2. Open **Draft queue** (`/drafts`).
 3. Approve / reject / copy text.
 4. **Nothing is posted to X** by this app.
@@ -50,14 +78,17 @@ Copy `.env.example` to `.env` if you want to override `DATABASE_PATH`.
 ```
 src/app/            Next.js UI + API routes (records, drafts, search)
 src/components/     Feed, RecordCard, badges
-src/lib/db.ts       better-sqlite3 schema + queries
+src/lib/store.ts    Facade: SQLite locally, JSON on Vercel / READ_ONLY
+src/lib/json-store.ts  Bundled JSON load + in-memory filter/search
+src/lib/db.ts       better-sqlite3 schema + queries (local / scripts)
 src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers
-scripts/            crawl, search, seed, export-jsonl
-data/seed.json      sample records so UI works before a full crawl
+scripts/            crawl, search, seed, export-jsonl, build-records
+data/seed.json      sample records
+data/records*.json  committed snapshot(s) for Vercel read-only feed
 data/*.db           local SQLite (gitignored)
 ```
 
-The UI and CLI share the same SQLite file (`data/declassified.db` by default).
+Locally, the UI and CLI share SQLite (`data/declassified.db` by default). On Vercel, API routes use `src/lib/store.ts` → JSON only.
 
 ## Crawl sources (MVP)
 
@@ -68,7 +99,7 @@ The UI and CLI share the same SQLite file (`data/declassified.db` by default).
 | **CIA** | Reading Room + historical collections | Keyword-filtered public links; coverage is opportunistic |
 | **State / NSA** | **Disabled** | Often sparse HTML or not reliably scrapable without APIs/auth |
 
-**Working MVP over perfect coverage:** if a live site blocks this environment or changes markup, `npm run seed` still populates the UI. Re-run `npm run crawl` when network access is good.
+**Working MVP over perfect coverage:** if a live site blocks this environment or changes markup, `npm run seed` still populates the UI. Re-run `npm run crawl` when network access is good. Refresh `data/records.json` before deploying.
 
 ### Future
 
