@@ -17,7 +17,7 @@ export async function runCrawl(
     results.push(await crawlNara());
   }
   if (source === 'all' || source === 'fbi') {
-    results.push(await crawlFbi({ enrichLimit: 3 }));
+    results.push(await crawlFbi({ limit: 550, enrichLimit: 8 }));
   }
   if (source === 'all' || source === 'cia') {
     results.push(await crawlCia());
