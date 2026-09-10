@@ -3,8 +3,11 @@ import type { Agency, DraftRow, RecordFilters, RecordRow } from './types';
 import { isReadOnly } from './mode';
 import {
   getAgenciesJson,
+  getAgenciesJsonAsync,
   getRecordByIdJson,
+  getRecordByIdJsonAsync,
   queryRecordsJson,
+  queryRecordsJsonAsync,
 } from './json-store';
 
 export { isReadOnly, READ_ONLY_BANNER } from './mode';
@@ -20,7 +23,6 @@ let _dbMod: DbModule | null = null;
  */
 function loadDb(): DbModule {
   if (_dbMod) return _dbMod;
-  // Prefer Next/webpack's non-bundled require when present.
   const g = globalThis as {
     __non_webpack_require__?: NodeRequire;
   };
@@ -30,11 +32,9 @@ function loadDb(): DbModule {
       : // eslint-disable-next-line no-eval, @typescript-eslint/no-unsafe-call
         (eval('require') as NodeRequire);
 
-  // Resolve from this file's directory at runtime (works under tsx + Next server).
   try {
     _dbMod = req(path.join(__dirname, 'db')) as DbModule;
   } catch {
-    // Fallback for tsx / source runs
     _dbMod = req(path.join(process.cwd(), 'src/lib/db')) as DbModule;
   }
   return _dbMod;
@@ -52,6 +52,18 @@ export function queryRecords(filters: RecordFilters = {}): {
   }
 }
 
+export async function queryRecordsAsync(filters: RecordFilters = {}): Promise<{
+  rows: RecordRow[];
+  total: number;
+}> {
+  if (isReadOnly()) return queryRecordsJsonAsync(filters);
+  try {
+    return loadDb().queryRecords(filters);
+  } catch {
+    return queryRecordsJsonAsync(filters);
+  }
+}
+
 export function getRecordById(id: string): RecordRow | undefined {
   if (isReadOnly()) return getRecordByIdJson(id);
   try {
@@ -61,12 +73,32 @@ export function getRecordById(id: string): RecordRow | undefined {
   }
 }
 
+export async function getRecordByIdAsync(
+  id: string
+): Promise<RecordRow | undefined> {
+  if (isReadOnly()) return getRecordByIdJsonAsync(id);
+  try {
+    return loadDb().getRecordById(id);
+  } catch {
+    return getRecordByIdJsonAsync(id);
+  }
+}
+
 export function getAgencies(): string[] {
   if (isReadOnly()) return getAgenciesJson();
   try {
     return loadDb().getAgencies();
   } catch {
     return getAgenciesJson();
+  }
+}
+
+export async function getAgenciesAsync(): Promise<string[]> {
+  if (isReadOnly()) return getAgenciesJsonAsync();
+  try {
+    return loadDb().getAgencies();
+  } catch {
+    return getAgenciesJsonAsync();
   }
 }
 
