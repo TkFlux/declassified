@@ -14,7 +14,7 @@ Repo: [TkFlux/declassified](https://github.com/TkFlux/declassified)
 - **Draft for X** → short tweet text stored in SQLite for human approval (`/drafts`) — **local only**
 - **Collector** scripts: polite crawl (delays + robots.txt), SQLite, JSONL export, CLI search
 - Metadata + URLs only — **does not bulk-download PDFs**
-- **Vercel read-only deploy**: feed from bundled `data/records*.json` (no `better-sqlite3` on serverless)
+- **Vercel read-only deploy**: feed from bundled `data/records.b64.txt` / parts (no `better-sqlite3` on serverless)
 
 ## Quick start (local, full features)
 
@@ -44,7 +44,7 @@ Copy `.env.example` to `.env` if you want to override `DATABASE_PATH` or force `
 
 Vercel serverless **cannot** use writable `better-sqlite3`. This app detects `process.env.VERCEL` (or `READ_ONLY=1`) and:
 
-1. Serves the feed from committed JSON (`data/records.json` plus any `data/records*.json` parts, falling back to `data/seed.json` + `data/export.jsonl` if present)
+1. Serves the feed from committed gzip+base64 (`data/records.b64.txt` or `data/records.b64.part*.txt`), falling back to GitHub raw if under 500 local records
 2. Keeps search + filters working in memory
 3. **Disables Draft for X** with banner: *“Drafts work locally — this deploy is read-only”*
 
@@ -52,12 +52,13 @@ Vercel serverless **cannot** use writable `better-sqlite3`. This app detects `pr
 
 ### Steps
 
-1. Ensure record snapshots are committed (regenerate after crawls):
+1. Ensure the feed snapshot is committed (regenerate after crawls):
 
    ```bash
    npm run export:jsonl   # optional, from local SQLite
    npm run build:records  # writes data/records.json
-   git add data/records.json && git commit -m "Update records for Vercel"
+   # then produce data/records.b64.txt (gzip+base64) or part files for GitHub/Vercel
+   git add data/records.b64* && git commit -m "Update records for Vercel"
    ```
 
 2. Import the GitHub repo in Vercel (framework: Next.js — `vercel.json` included).
@@ -79,16 +80,16 @@ Do **not** expect drafts, crawl, or SQLite writes on Vercel.
 src/app/            Next.js UI + API routes (records, drafts, search)
 src/components/     Feed, RecordCard, badges
 src/lib/store.ts    Facade: SQLite locally, JSON on Vercel / READ_ONLY
-src/lib/json-store.ts  Bundled JSON load + in-memory filter/search
+src/lib/json-store.ts  Bundled b64/JSON load + in-memory filter/search
 src/lib/db.ts       better-sqlite3 schema + queries (local / scripts)
 src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers
 scripts/            crawl, search, seed, export-jsonl, build-records
 data/seed.json      sample records
-data/records*.json  committed snapshot(s) for Vercel read-only feed
+data/records.b64*   committed 609-record snapshot for Vercel read-only feed
 data/*.db           local SQLite (gitignored)
 ```
 
-Locally, the UI and CLI share SQLite (`data/declassified.db` by default). On Vercel, API routes use `src/lib/store.ts` → JSON only.
+Locally, the UI and CLI share SQLite (`data/declassified.db` by default). On Vercel, API routes use `src/lib/store.ts` → JSON/b64 only.
 
 ## Crawl sources (MVP)
 
@@ -99,7 +100,7 @@ Locally, the UI and CLI share SQLite (`data/declassified.db` by default). On Ver
 | **CIA** | Reading Room + historical collections | Keyword-filtered public links; coverage is opportunistic |
 | **State / NSA** | **Disabled** | Often sparse HTML or not reliably scrapable without APIs/auth |
 
-**Working MVP over perfect coverage:** if a live site blocks this environment or changes markup, `npm run seed` still populates the UI. Re-run `npm run crawl` when network access is good. Refresh `data/records.json` before deploying.
+**Working MVP over perfect coverage:** if a live site blocks this environment or changes markup, `npm run seed` still populates the UI. Re-run `npm run crawl` when network access is good. Refresh `data/records.b64*` before deploying.
 
 ### Future
 
@@ -125,3 +126,15 @@ Covers schema/migrate, upsert + filters, draft queue, tweet draft truncation, an
 ## License
 
 MIT (or as declared by the repository owner).
+
+## Growing the feed (~600+)
+
+Default FBI Vault crawl pulls **550** newest sitemap entries (metadata + URLs only). NARA/CIA add more.
+
+```bash
+npm run crawl
+npm run export:jsonl
+npm run build:records
+```
+
+Commit `data/records.b64*` (and optionally `data/records.json`) so Vercel serves the larger feed. Lattice also refreshes on a Mon/Thu schedule.
