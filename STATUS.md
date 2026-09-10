@@ -1,8 +1,6 @@
 # Declassified status
 
-- UI cleanup on main: removed amber drafts banner, "Not digitized" dashed box, and header " · read-only".
-- Records: part1+part2+part3 + records.b64.txt = 98 unique ids.
-- Latest production deploy (file deploy, no teamId): dpl_DnFzBXdLoQ4qptBGcbdHxZ7CYR8R
-  - URL: https://declassified-k6w515w1g-tkflux.vercel.app
-  - Alias: https://declassified-tkflux.vercel.app
-  - App loads records from GitHub raw `data/records.b64.txt` (and part JSON fallback) at runtime.
+- Feed snapshot: **609** unique records (NARA 11, NDC 30, CIA 14, FBI 554) via `data/records.b64.txt` (gzip+base64).
+- Crawl defaults: FBI sitemap limit **550**, enrichLimit **8** (`src/lib/sources/fbi.ts`, `index.ts`).
+- JSON store loads local `records.b64.txt` and falls back to GitHub raw if under 500.
+- Alias: https://declassified-tkflux.vercel.app
