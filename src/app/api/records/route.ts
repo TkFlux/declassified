@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAgencies, isReadOnly, queryRecords } from '@/lib/store';
+import { getAgenciesAsync, isReadOnly, queryRecordsAsync } from '@/lib/store';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     const limit = Number(sp.get('limit') || 24);
     const offset = Number(sp.get('offset') || 0);
 
-    const { rows, total } = queryRecords({
+    const { rows, total } = await queryRecordsAsync({
       q,
       agency,
       download,
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       total,
       limit,
       offset,
-      agencies: getAgencies(),
+      agencies: await getAgenciesAsync(),
       readOnly: isReadOnly(),
     });
   } catch (e) {
