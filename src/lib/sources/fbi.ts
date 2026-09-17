@@ -76,7 +76,7 @@ export async function crawlFbi(opts: {
   const errors: string[] = [];
   const rows: Array<Omit<RecordRow, 'collected_at'>> = [];
   let fetched = 0;
-  const limit = opts.limit ?? 550;
+  const limit = opts.limit ?? 700;
   const enrichLimit = opts.enrichLimit ?? 8;
 
   try {
