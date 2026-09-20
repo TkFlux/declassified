@@ -19,7 +19,7 @@ const display = IBM_Plex_Serif({
 export const metadata: Metadata = {
   title: 'Declassified — Public Release Feed',
   description:
-    'Continuous visual feed of U.S. declassified and public-release records. Draft for X with human approval only.',
+    'Continuous visual feed of U.S. declassified and public-release records from official sources.',
 };
 
 export default function RootLayout({
@@ -49,12 +49,14 @@ export default function RootLayout({
               >
                 Feed
               </Link>
-              <Link
-                href="/drafts"
-                className="rounded-md px-3 py-1.5 text-ink-200 hover:bg-ink-800 hover:text-white"
-              >
-                Draft queue
-              </Link>
+              {!readOnly && (
+                <Link
+                  href="/drafts"
+                  className="rounded-md px-3 py-1.5 text-ink-200 hover:bg-ink-800 hover:text-white"
+                >
+                  Draft queue
+                </Link>
+              )}
               <a
                 href="https://github.com/TkFlux/declassified"
                 target="_blank"
@@ -68,12 +70,8 @@ export default function RootLayout({
         </header>
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-xs text-ink-400">
-          Metadata and links only — no bulk PDF downloads. Drafts for X require
-          human approval; nothing is auto-posted. State/NSA sources disabled in
-          MVP.
-          {readOnly
-            ? ' Vercel deploy serves bundled JSON (no better-sqlite3).'
-            : ''}
+          Metadata and links only — no bulk PDF downloads. Official sources
+          only. Not affiliated with the U.S. government.
         </footer>
       </body>
     </html>
