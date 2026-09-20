@@ -109,14 +109,7 @@ export function RecordCard({
             >
               {busy ? 'Drafting…' : 'Draft for X'}
             </button>
-          ) : (
-            <span
-              title="Drafts are disabled on this deploy"
-              className="rounded-md border border-ink-800 px-3 py-1.5 text-xs text-ink-500"
-            >
-              Drafts disabled
-            </span>
-          )}
+          ) : null}
         </div>
         {msg && <p className="text-xs text-ink-400">{msg}</p>}
       </div>
