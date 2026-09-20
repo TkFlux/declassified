@@ -13,18 +13,29 @@ type ApiResponse = {
 
 const AGENCIES = ['all', 'NARA', 'NDC', 'FBI', 'CIA'] as const;
 
-export function Feed() {
+type FeedProps = {
+  initialRows?: RecordCardData[];
+  initialTotal?: number;
+  initialReadOnly?: boolean;
+};
+
+export function Feed({
+  initialRows = [],
+  initialTotal = 0,
+  initialReadOnly = false,
+}: FeedProps) {
   const [q, setQ] = useState('');
   const [agency, setAgency] = useState('all');
   const [download, setDownload] = useState<'all' | 'available' | 'page-only'>(
     'all'
   );
-  const [rows, setRows] = useState<RecordCardData[]>([]);
-  const [total, setTotal] = useState(0);
+  const [rows, setRows] = useState<RecordCardData[]>(initialRows);
+  const [total, setTotal] = useState(initialTotal);
   const [offset, setOffset] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(initialRows.length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [readOnly, setReadOnly] = useState(false);
+  const [readOnly, setReadOnly] = useState(initialReadOnly);
+  const [booted, setBooted] = useState(initialRows.length > 0);
   const limit = 12;
 
   const load = useCallback(
@@ -46,6 +57,7 @@ export function Feed() {
         setOffset(nextOffset);
         setReadOnly(Boolean(data.readOnly));
         setRows((prev) => (replace ? data.rows : [...prev, ...data.rows]));
+        setBooted(true);
       } catch (e) {
         setError((e as Error).message);
       } finally {
@@ -56,7 +68,18 @@ export function Feed() {
   );
 
   useEffect(() => {
+    // If server already hydrated cards and filters are defaults, skip first fetch.
+    if (
+      booted &&
+      !q.trim() &&
+      agency === 'all' &&
+      download === 'all' &&
+      rows.length > 0
+    ) {
+      return;
+    }
     void load(0, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional first-load / filter change
   }, [load]);
 
   const hasMore = rows.length < total;
@@ -70,9 +93,6 @@ export function Feed() {
         <p className="mt-1 max-w-2xl text-sm text-ink-300">
           Newest public / declassified records first. Search and filter by
           agency or digitization status.
-          {readOnly
-            ? ' This deploy serves bundled JSON (no SQLite).'
-            : ' Draft for X creates an approval-only queue entry — nothing is posted automatically.'}
         </p>
         <form
           className="mt-4 grid gap-3 md:grid-cols-4"
@@ -117,7 +137,9 @@ export function Feed() {
           </button>
         </form>
         <p className="mt-3 text-xs text-ink-400">
-          Showing {rows.length} of {total}
+          {loading && rows.length === 0
+            ? 'Loading…'
+            : `Showing ${rows.length} of ${total}`}
         </p>
       </section>
 
@@ -133,17 +155,8 @@ export function Feed() {
         ))}
       </section>
 
-      {!loading && rows.length === 0 && (
-        <p className="text-center text-ink-400">
-          No records yet. Run <code className="text-ink-200">npm run seed</code>{' '}
-          then refresh
-          {readOnly ? (
-            <>
-              , or commit <code className="text-ink-200">data/records.json</code>
-            </>
-          ) : null}
-          .
-        </p>
+      {!loading && booted && rows.length === 0 && (
+        <p className="text-center text-ink-400">No records match these filters.</p>
       )}
 
       {hasMore && (
