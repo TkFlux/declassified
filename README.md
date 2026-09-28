@@ -85,7 +85,7 @@ src/lib/db.ts       better-sqlite3 schema + queries (local / scripts)
 src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers
 scripts/            crawl, search, seed, export-jsonl, build-records
 data/seed.json      sample records
-data/records.b64*   committed 609-record snapshot for Vercel read-only feed
+data/records.b64*   committed 759-record snapshot for Vercel read-only feed
 data/*.db           local SQLite (gitignored)
 ```
 
@@ -127,9 +127,9 @@ Covers schema/migrate, upsert + filters, draft queue, tweet draft truncation, an
 
 MIT (or as declared by the repository owner).
 
-## Growing the feed (~600+)
+## Growing the feed (759 records)
 
-Default FBI Vault crawl pulls **550** newest sitemap entries (metadata + URLs only). NARA/CIA add more.
+Default FBI Vault crawl pulls **700** newest sitemap entries (metadata + URLs only). NARA/CIA add more.
 
 ```bash
 npm run crawl
