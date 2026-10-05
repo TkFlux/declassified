@@ -51,19 +51,19 @@ async function enrichDownload(pageUrl: string): Promise<string | null> {
     const res = await politeFetch(pageUrl, { delayMs: 700 });
     if (!res.ok) return null;
     const html = await res.text();
+    // Only trust links that live on the Vault itself. The page chrome links to
+    // unrelated PDFs (e.g. an fbijobs.gov EEOC policy) that must not be used.
+    const onVault = (href: string) =>
+      href.startsWith('/') || /^https?:\/\/vault\.fbi\.gov\//i.test(href);
+    const hrefs = [...html.matchAll(/href=["']([^"']+)["']/gi)].map((m) => m[1]);
     const pdf =
-      html.match(/href=["']([^"']+\.pdf[^"']*)["']/i)?.[1] ||
-      html.match(/href=["']([^"']+@@download\/file[^"']*)["']/i)?.[1];
-    if (!pdf) {
-      // Common Plone pattern when HTML is thin
-      if (pageUrl.endsWith('/view')) {
-        return pageUrl.replace(/\/view$/, '/@@download/file');
-      }
-      return null;
-    }
+      hrefs.find((h) => onVault(h) && /(@@|at_)download\/file/i.test(h)) ||
+      hrefs.find((h) => onVault(h) && /\.pdf(\?|$)/i.test(h));
+    // No real file link on the page (e.g. audio-only entries): leave it unset
+    // instead of guessing a URL that may 404/500.
+    if (!pdf) return null;
     if (pdf.startsWith('/')) return `https://vault.fbi.gov${pdf}`;
-    if (pdf.startsWith('http')) return pdf;
-    return null;
+    return pdf;
   } catch {
     return null;
   }
