@@ -13,7 +13,7 @@
     "build:records": "tsx scripts/build-records.ts",
     "seed": "tsx scripts/seed.ts",
     "test": "tsx --test tests/*.test.ts",
-    "postinstall": "echo 'Ready. Run npm run seed if DB is empty. For Vercel, ensure data/records.json is committed.'"
+    "postinstall": "echo 'Ready. Run npm run seed if DB is empty. For Vercel, ensure data/records.b64.txt and data/records.b64.part1.txt through data/records.b64.part9.txt are committed (gzip+base64 feed snapshot).'"
   },
   "engines": {
     "node": ">=20"
