@@ -35,7 +35,7 @@ npm run crawl -- --source nara   # one source
 npm run crawl -- --resume        # skip sources already marked done in data/crawl-state.json
 npm run search -- --query "Cuba"
 npm run export:jsonl             # data/export.jsonl
-npm run build:records            # merge seed + export → data/records.json (for Vercel)
+npm run build:records            # merge history + seed + export → data/records.json (for Vercel)
 ```
 
 Copy `.env.example` to `.env` if you want to override `DATABASE_PATH` or force `READ_ONLY=1`.
@@ -138,3 +138,46 @@ npm run build:records
 ```
 
 Commit `data/records.b64*` (and optionally `data/records.json`) so Vercel serves the larger feed. Lattice also refreshes on a Mon/Thu schedule.
+
+## Historical record retention
+
+`npm run build:records` builds an archive union, in this priority order:
+
+1. The committed `data/records.b64.txt` or consecutive numbered parts.
+2. Existing `data/records.json` (including discoveries from a prior local build).
+3. `data/seed.json`.
+4. The latest `data/export.jsonl`.
+
+The stable record ID is the identity key. A crawl window, failed crawl, empty
+export, or record absent from this run is **not evidence of removal**. Historical
+records remain in the feed. The 700-entry FBI limit bounds crawl work, not archive
+size. This also works in a fresh checkout with an empty SQLite database and the
+tracked `records.json` placeholder (`[]`).
+
+For duplicate IDs, existing populated metadata wins; new input fills empty
+fields (including download/thumbnail links, publication date and raw metadata).
+`OTHER` agency and `unknown` source can be enriched. The earliest known collection
+time is retained. Conflicting source URLs for one ID abort the build for review.
+This conservative policy avoids replacing a curated description or verified link
+with a generic sitemap value; corrections to populated fields require a deliberate
+edit of the authoritative historical snapshot. Records are sorted by date and ID
+for repeatable output.
+
+Malformed historical snapshots, missing numbered parts, invalid records and bad
+JSONL abort before replacing the output. Fix the input and rerun; do not discard
+the historical snapshot to get a refresh through. Source disappearance has no
+automatic deletion semantics. A confirmed removal/correction requires editing all
+retained copies (packed history, local records, seed and export as applicable)
+before rebuilding, so an older copy cannot reintroduce it. Retention does not
+claim that old URLs have been checked for current availability.
+
+Refresh sequence: crawl → export → **build:records** → package the resulting
+`records.json` → commit the snapshot. Always keep the prior committed snapshot
+available until the builder completes, and package this union rather than the raw
+crawl export. Packaging automation is a separate task; this change does not alter
+the packer or scheduler. Previously lost discoveries can be recovered by using an
+older snapshot as history and supplying the current records as the new export.
+
+Regression tests cover rolling windows, empty exports, metadata preservation and
+enrichment, duplicate IDs, stable repeat builds, packed/JSON history, first builds,
+corrupt input, and the actual committed snapshot in a fresh checkout.
