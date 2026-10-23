@@ -13,6 +13,9 @@ data/records.b64.part6.txt
 data/records.b64.part7.txt
 data/records.b64.part8.txt
 data/records.b64.part9.txt
+data/records.b64.part10.txt
+data/records.b64.part11.txt
+data/records.b64.part12.txt
 data/records.b64.txt
 data/records.json
 data/records.min.json
@@ -20,10 +23,12 @@ data/records.part1.json
 data/records.part2.json
 data/records.part3.json
 data/seed.json
+data/snapshot-manifest.json
 next.config.mjs
 package-lock.json
 package.json
 postcss.config.mjs
+scripts/backfill-history.ts
 scripts/build-records.ts
 scripts/crawl.ts
 scripts/export-jsonl.ts
@@ -44,6 +49,7 @@ src/lib/draft-text.ts
 src/lib/http.ts
 src/lib/json-store.ts
 src/lib/mode.ts
+src/lib/snapshot.ts
 src/lib/sources/cia.ts
 src/lib/sources/fbi.ts
 src/lib/sources/index.ts
@@ -54,5 +60,6 @@ src/types/robots-parser.d.ts
 tailwind.config.ts
 tests/db.test.ts
 tests/parser.test.ts
+tests/snapshot.test.ts
 tsconfig.json
 vercel.json

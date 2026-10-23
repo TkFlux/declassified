@@ -35,7 +35,8 @@ npm run crawl -- --source nara   # one source
 npm run crawl -- --resume        # skip sources already marked done in data/crawl-state.json
 npm run search -- --query "Cuba"
 npm run export:jsonl             # data/export.jsonl
-npm run build:records            # merge seed + export → data/records.json (for Vercel)
+npm run build:records            # merge export.jsonl INTO the packed snapshot (accumulates; never drops)
+npm run backfill:history         # union every record ever committed (git history) into the snapshot
 ```
 
 Copy `.env.example` to `.env` if you want to override `DATABASE_PATH` or force `READ_ONLY=1`.
@@ -55,10 +56,9 @@ Vercel serverless **cannot** use writable `better-sqlite3`. This app detects `pr
 1. Ensure the feed snapshot is committed (regenerate after crawls):
 
    ```bash
-   npm run export:jsonl   # optional, from local SQLite
-   npm run build:records  # writes data/records.json
-   # then produce data/records.b64.txt (gzip+base64) or part files for GitHub/Vercel
-   git add data/records.b64* && git commit -m "Update records for Vercel"
+   npm run export:jsonl   # crawl results from local SQLite → data/export.jsonl
+   npm run build:records  # MERGES the crawl into data/records.b64.part*.txt
+   git add data/records.b64* data/snapshot-manifest.json && git commit -m "Update records for Vercel"
    ```
 
 2. Import the GitHub repo in Vercel (framework: Next.js — `vercel.json` included).
@@ -85,7 +85,7 @@ src/lib/db.ts       better-sqlite3 schema + queries (local / scripts)
 src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers
 scripts/            crawl, search, seed, export-jsonl, build-records
 data/seed.json      sample records
-data/records.b64*   committed 759-record snapshot for Vercel read-only feed
+data/records.b64*   committed accumulating snapshot for Vercel read-only feed (see data/snapshot-manifest.json)
 data/*.db           local SQLite (gitignored)
 ```
 
@@ -127,14 +127,31 @@ Covers schema/migrate, upsert + filters, draft queue, tweet draft truncation, an
 
 MIT (or as declared by the repository owner).
 
-## Growing the feed (759 records)
+## Growing the feed (accumulating archive)
 
-Default FBI Vault crawl pulls **700** newest sitemap entries (metadata + URLs only). NARA/CIA add more.
+Default FBI Vault crawl pulls the **700** newest sitemap entries (metadata + URLs only). NARA/CIA add more.
+The crawl window is **not** the archive: each refresh is merged into the committed snapshot.
 
 ```bash
 npm run crawl
 npm run export:jsonl
-npm run build:records
+npm run build:records      # merge, don't replace
 ```
 
-Commit `data/records.b64*` (and optionally `data/records.json`) so Vercel serves the larger feed. Lattice also refreshes on a Mon/Thu schedule.
+Merge rules (`src/lib/snapshot.ts` → `mergeSnapshot`):
+
+- New IDs are added (`first_seen` = `last_seen` = refresh time).
+- Existing IDs are updated from the crawl; a previously found `download_url`
+  (also `thumbnail_url`, `published_at`) is kept when the new crawl lacks one.
+  Untrusted FBI download links (not on `vault.fbi.gov`) are dropped.
+- IDs missing from the crawl window are **kept** unchanged (`last_seen` shows when they were last crawled).
+- A record is removed only when its ID is listed in `data/removed-ids.json`
+  (explicitly confirmed gone), e.g. `[{"id": "fbi-xxxx", "reason": "404 on vault", "confirmed_at": "2026-10-22"}]`.
+- The build aborts (and writes nothing) if the existing snapshot is corrupt or a part is missing.
+
+The snapshot is gzip+base64 split into ~3500-char `data/records.b64.partN.txt` files; the
+number of parts grows with the archive (the loader reads parts until the first missing
+index). `data/snapshot-manifest.json` records the expected record/part counts.
+Commit **all** parts plus the manifest. `npm run backfill:history` rebuilds the union of
+every snapshot version in git history (newest version of each ID wins).
+Lattice also refreshes on a Mon/Thu schedule — it must run `build:records` (merge) rather than overwrite the parts.
