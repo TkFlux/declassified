@@ -154,9 +154,13 @@ export async function ensureRecordsLoaded(): Promise<RecordRow[]> {
 
 function matches(row: RecordRow, filters: RecordFilters): boolean {
   if (filters.q) {
-    const q = filters.q.toLowerCase();
-    const hay = `${row.title} ${row.summary} ${row.agency} ${row.source}`.toLowerCase();
-    if (!hay.includes(q)) return false;
+    const q = filters.q.toLowerCase().trim();
+    const hay = `${row.title} ${row.summary} ${row.agency} ${row.source} ${row.download_url || ''}`.toLowerCase();
+    // Exact phrase match, or every whitespace-separated term present (AND).
+    if (!hay.includes(q)) {
+      const terms = q.split(/\s+/).filter(Boolean);
+      if (!terms.length || !terms.every((t) => hay.includes(t))) return false;
+    }
   }
   if (filters.agency && filters.agency !== 'all') {
     if (row.agency.toUpperCase() !== filters.agency.toUpperCase()) return false;

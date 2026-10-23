@@ -4,6 +4,7 @@ const COLORS: Record<string, string> = {
   FBI: 'bg-amber-900/50 text-amber-100 border-amber-700',
   CIA: 'bg-emerald-900/50 text-emerald-100 border-emerald-700',
   STATE: 'bg-rose-900/50 text-rose-100 border-rose-700',
+  PURSUE: 'bg-lime-900/50 text-lime-100 border-lime-700',
   NSA: 'bg-violet-900/50 text-violet-100 border-violet-700',
   OTHER: 'bg-ink-800 text-ink-200 border-ink-600',
 };

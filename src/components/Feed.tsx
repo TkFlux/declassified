@@ -11,7 +11,7 @@ type ApiResponse = {
   readOnly?: boolean;
 };
 
-const AGENCIES = ['all', 'NARA', 'NDC', 'FBI', 'CIA'] as const;
+const AGENCIES = ['all', 'NARA', 'NDC', 'FBI', 'CIA', 'PURSUE'] as const;
 
 type FeedProps = {
   initialRows?: RecordCardData[];
@@ -114,7 +114,7 @@ export function Feed({
           >
             {AGENCIES.map((a) => (
               <option key={a} value={a}>
-                {a === 'all' ? 'All agencies' : a}
+                {a === 'all' ? 'All agencies' : a === 'PURSUE' ? 'PURSUE (UAP / war.gov)' : a}
               </option>
             ))}
           </select>
