@@ -21,6 +21,10 @@ export interface RecordRow {
   published_at: string | null;
   collected_at: string;
   raw_meta: string | null;
+  /** ISO time the record first appeared in the archive (snapshot merges). */
+  first_seen?: string;
+  /** ISO time of the most recent crawl that returned this record. */
+  last_seen?: string;
 }
 
 export interface DraftRow {

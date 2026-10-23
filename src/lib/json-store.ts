@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 import type { Agency, RecordFilters, RecordRow } from './types';
+import { MAX_PARTS, partName, readPartsB64, sortRecords } from './snapshot';
 
 let _cache: RecordRow[] | null = null;
 
@@ -10,7 +11,7 @@ function dataPath(name: string): string {
 }
 
 function normalize(r: Partial<RecordRow> & { id: string }): RecordRow {
-  return {
+  const out: RecordRow = {
     id: String(r.id),
     title: r.title || '',
     summary: r.summary || '',
@@ -29,6 +30,9 @@ function normalize(r: Partial<RecordRow> & { id: string }): RecordRow {
           ? JSON.stringify(r.raw_meta)
           : null,
   };
+  if (r.first_seen) out.first_seen = r.first_seen;
+  if (r.last_seen) out.last_seen = r.last_seen;
+  return out;
 }
 
 function parseRecords(raw: string): RecordRow[] {
@@ -67,14 +71,9 @@ function loadB64File(filePath: string): RecordRow[] {
       b64 = fs.readFileSync(filePath, 'utf8').trim();
     }
     if (!b64 || b64.length < 10000) {
-      const dir = path.dirname(filePath);
-      const parts: string[] = [];
-      for (let i = 1; i <= 20; i++) {
-        const pp = path.join(dir, `records.b64.part${i}.txt`);
-        if (!fs.existsSync(pp)) break;
-        parts.push(fs.readFileSync(pp, 'utf8').trim());
-      }
-      if (parts.length) b64 = parts.join('');
+      // Parts are read until the first missing index (no fixed part cap).
+      const joined = readPartsB64(path.dirname(filePath));
+      if (joined) b64 = joined;
     }
     if (!b64) return [];
     const buf = zlib.gunzipSync(Buffer.from(b64, 'base64'));
@@ -109,12 +108,7 @@ export function loadJsonRecords(force = false): RecordRow[] {
     for (const r of loadFromFile(dataPath('export.jsonl'))) byId.set(r.id, r);
   }
 
-  const rows = [...byId.values()].sort((a, b) => {
-    const da = a.published_at || a.collected_at || '';
-    const db = b.published_at || b.collected_at || '';
-    if (db !== da) return db.localeCompare(da);
-    return (b.collected_at || '').localeCompare(a.collected_at || '');
-  });
+  const rows = sortRecords([...byId.values()]);
 
   _cache = rows;
   return rows;
@@ -129,8 +123,8 @@ async function loadRemoteFromGithub(): Promise<RecordRow[]> {
     if (res.ok) b64 = (await res.text()).trim();
     if (!b64 || b64.length < 10000) {
       const parts: string[] = [];
-      for (let i = 1; i <= 20; i++) {
-        const r = await fetch(`${base}/records.b64.part${i}.txt`, { cache: 'no-store' });
+      for (let i = 1; i <= MAX_PARTS; i++) {
+        const r = await fetch(`${base}/${partName(i)}`, { cache: 'no-store' });
         if (!r.ok) break;
         parts.push((await r.text()).trim());
       }
@@ -154,12 +148,7 @@ export async function ensureRecordsLoaded(): Promise<RecordRow[]> {
   if (!remote.length) return local;
   const byId = new Map(local.map((r) => [r.id, r] as const));
   for (const r of remote) byId.set(r.id, r);
-  _cache = [...byId.values()].sort((a, b) => {
-    const da = a.published_at || a.collected_at || '';
-    const db = b.published_at || b.collected_at || '';
-    if (db !== da) return db.localeCompare(da);
-    return (b.collected_at || '').localeCompare(a.collected_at || '');
-  });
+  _cache = sortRecords([...byId.values()]);
   return _cache;
 }
 
