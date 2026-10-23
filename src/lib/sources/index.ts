@@ -2,8 +2,9 @@ import type { CrawlSourceResult } from '../types';
 import { crawlNara } from './nara';
 import { crawlFbi } from './fbi';
 import { crawlCia } from './cia';
+import { crawlPursue } from './pursue';
 
-export type SourceId = 'nara' | 'fbi' | 'cia' | 'all';
+export type SourceId = 'nara' | 'fbi' | 'cia' | 'pursue' | 'all';
 
 /** State / NSA intentionally disabled for MVP — often auth-walled or sparse public HTML. */
 export const DISABLED_SOURCES = ['state', 'nsa'] as const;
@@ -22,8 +23,11 @@ export async function runCrawl(
   if (source === 'all' || source === 'cia') {
     results.push(await crawlCia());
   }
+  if (source === 'all' || source === 'pursue') {
+    results.push(await crawlPursue());
+  }
 
   return results;
 }
 
-export { crawlNara, crawlFbi, crawlCia };
+export { crawlNara, crawlFbi, crawlCia, crawlPursue };

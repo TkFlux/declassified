@@ -5,6 +5,7 @@
  *   npm run crawl -- --source nara
  *   npm run crawl -- --source fbi
  *   npm run crawl -- --source cia
+ *   npm run crawl -- --source pursue   (war.gov PURSUE UAP CSV, all releases)
  *   npm run crawl -- --resume
  */
 import fs from 'fs';
@@ -59,7 +60,7 @@ async function main() {
 
   const state = loadState();
   const order: SourceId[] =
-    args.source === 'all' ? ['nara', 'fbi', 'cia'] : [args.source];
+    args.source === 'all' ? ['nara', 'fbi', 'cia', 'pursue'] : [args.source];
 
   const toRun = args.resume
     ? order.filter((s) => !state.completedSources.includes(s))

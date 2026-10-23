@@ -5,6 +5,7 @@ export type Agency =
   | 'CIA'
   | 'STATE'
   | 'NSA'
+  | 'PURSUE'
   | 'OTHER';
 
 export type DownloadKind = 'file' | 'page' | 'none';
