@@ -1,0 +1,11 @@
+{
+  "records": 937,
+  "parts": 12,
+  "base64_chars": 40712,
+  "agencies": {
+    "CIA": 14,
+    "NDC": 30,
+    "NARA": 11,
+    "FBI": 882
+  }
+}
