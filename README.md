@@ -82,7 +82,7 @@ src/components/     Feed, RecordCard, badges
 src/lib/store.ts    Facade: SQLite locally, JSON on Vercel / READ_ONLY
 src/lib/json-store.ts  Bundled b64/JSON load + in-memory filter/search
 src/lib/db.ts       better-sqlite3 schema + queries (local / scripts)
-src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers
+src/lib/sources/    NARA/NDC, FBI Vault, CIA public page crawlers, war.gov PURSUE UAP CSV
 scripts/            crawl, search, seed, export-jsonl, build-records
 data/seed.json      sample records
 data/records.b64*   committed accumulating snapshot for Vercel read-only feed (see data/snapshot-manifest.json)
@@ -98,6 +98,7 @@ Locally, the UI and CLI share SQLite (`data/declassified.db` by default). On Ver
 | **NARA / NDC** | Press listing HTML + `/declassification` | `press-releases.rss` currently serves HTML (Drupal); we parse press + declass links. Respects long crawl-delay. |
 | **FBI Vault** | `sitemap.xml` (newest first) + light enrich | Listing UI is JS-heavy; sitemap is the reliable real-fetch path. Optional `@@download/file` guess on a few items. |
 | **CIA** | Reading Room + historical collections | Keyword-filtered public links; coverage is opportunistic |
+| **PURSUE** | US Department of War UAP records (war.gov/UFO), all releases from the site's `uap-data.csv` | Full CSV each crawl (`npm run crawl -- --source pursue`); originating agency, release number, file type in summary/raw_meta; war.gov needs browser headers (403 otherwise) |
 | **State / NSA** | **Disabled** | Often sparse HTML or not reliably scrapable without APIs/auth |
 
 **Working MVP over perfect coverage:** if a live site blocks this environment or changes markup, `npm run seed` still populates the UI. Re-run `npm run crawl` when network access is good. Refresh `data/records.b64*` before deploying.

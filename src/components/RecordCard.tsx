@@ -30,6 +30,12 @@ function formatDate(iso: string | null): string {
   }
 }
 
+function pursueStamp(sourceUrl: string): string {
+  if (/dvidshub\.net\/video\//.test(sourceUrl)) return 'PURSUE · UAP video';
+  if (/dvidshub\.net\/audio\//.test(sourceUrl)) return 'PURSUE · UAP audio';
+  return 'PURSUE · UAP record';
+}
+
 export function RecordCard({
   record,
   onDrafted,
@@ -41,6 +47,8 @@ export function RecordCard({
 }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [imgFailed, setImgFailed] = useState(false);
+  const isPursue = record.agency === 'PURSUE';
   const hasFile = Boolean(record.download_url);
   const official = record.download_url || record.source_url;
 
@@ -67,16 +75,25 @@ export function RecordCard({
 
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-ink-800 bg-ink-950/80 shadow-lg shadow-black/20 transition hover:border-ink-600">
-      {record.thumbnail_url ? (
+      {record.thumbnail_url && !imgFailed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={record.thumbnail_url}
           alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={() => setImgFailed(true)}
           className="h-36 w-full object-cover opacity-90"
         />
       ) : (
-        <div className="flex h-28 items-end bg-gradient-to-br from-ink-800 to-ink-950 px-4 pb-3">
-          <span className="stamp text-ink-400">Public record</span>
+        <div
+          className={`flex h-28 items-end bg-gradient-to-br px-4 pb-3 ${
+            isPursue ? 'from-lime-950 via-ink-900 to-ink-950' : 'from-ink-800 to-ink-950'
+          }`}
+        >
+          <span className="stamp text-ink-400">
+            {isPursue ? pursueStamp(record.source_url) : 'Public record'}
+          </span>
         </div>
       )}
       <div className="flex flex-1 flex-col gap-3 p-4">
@@ -98,7 +115,11 @@ export function RecordCard({
             rel="noreferrer"
             className="rounded-md bg-ink-100 px-3 py-1.5 text-xs font-semibold text-ink-950 hover:bg-white"
           >
-            {hasFile ? 'Official download' : 'Official source'}
+            {hasFile
+              ? 'Official download'
+              : /dvidshub\.net\/(video|audio)\//.test(record.source_url)
+                ? 'Official media (DVIDS)'
+                : 'Official source'}
           </a>
           {draftsEnabled ? (
             <button

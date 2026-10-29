@@ -123,11 +123,17 @@ export function queryRecords(filters: RecordFilters = {}): {
   const where: string[] = [];
   const params: Record<string, string | number> = {};
 
-  if (filters.q) {
-    where.push(
-      `(title LIKE @q OR summary LIKE @q OR agency LIKE @q OR source LIKE @q)`
-    );
-    params.q = `%${filters.q}%`;
+  if (filters.q && filters.q.trim()) {
+    // Every whitespace-separated term must appear somewhere (AND).
+    const hay = `(title || ' ' || summary || ' ' || agency || ' ' || source || ' ' || COALESCE(download_url, ''))`;
+    filters.q
+      .trim()
+      .split(/\s+/)
+      .slice(0, 12)
+      .forEach((t, i) => {
+        where.push(`${hay} LIKE @q${i}`);
+        params[`q${i}`] = `%${t}%`;
+      });
   }
   if (filters.agency && filters.agency !== 'all') {
     where.push(`agency = @agency`);
