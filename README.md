@@ -49,7 +49,7 @@ Vercel serverless **cannot** use writable `better-sqlite3`. This app detects `pr
 2. Keeps search + filters working in memory
 3. **Disables Draft for X** with banner: *“Drafts work locally — this deploy is read-only”*
 
-`better-sqlite3` is an **optionalDependency** and is only loaded dynamically when not in read-only mode, so the Vercel build does not need the native module.
+`better-sqlite3` is a regular dependency for local crawl and SQLite, but is only loaded dynamically when not in read-only mode. The Vercel build marks it external and uses the bundled JSON/b64 feed at runtime, not SQLite.
 
 ### Steps
 
