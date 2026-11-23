@@ -1,12 +1,12 @@
 {
-  "records": 1471,
-  "parts": 64,
-  "base64_chars": 223392,
+  "records": 1521,
+  "parts": 72,
+  "base64_chars": 249192,
   "agencies": {
     "CIA": 14,
     "NDC": 30,
     "NARA": 11,
-    "FBI": 938,
-    "PURSUE": 478
+    "FBI": 945,
+    "PURSUE": 521
   }
 }
